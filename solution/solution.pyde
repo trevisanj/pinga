@@ -1,11 +1,13 @@
 """
-InGA - Interactive Genetic Algorithm framework - 2nd edition
+Incomplete program for a genetic algorithm tutorial.
 
-TODO
-  - the gene position must be kept where it is!!
-  - mix the two concepts: incremental angle ("turn") and new starting angle, so now the gene will be a variable-size sub-drawing which always has the same orientation 
-  - assign colors to parents so that chromosome pieces can be seen in children
-
+The task is to implement the following methods:
+    - random_individual()
+    - draw_individual()
+    - mutate()
+    - create_child() 
+    
+See ../README.md for more detailed information.
 """
 import math
 import random
@@ -14,28 +16,33 @@ import glob
 from collections import OrderedDict
 
 
-####################################################################################
-# Case-specific implementation 
-
+# # Globals
+#
+# ## General setup
+#
 # Mutation probability for each gene
 MUTATION_PROB = .1
-
-BANK_DIR = "../bank"
+# Scaling factor affecting the sizes of the images drawn
 AREA_MULT = 500.
-Y_MULT = 7.
-
+# Scaling factor affecting the distances between images
+DIST_MULT = 7.
+#
+# ## F_* variables: "feature" data
+#
+# These variables may be seen as columns in a table.
+#
 # feature names (will be used to search for filenames)
-f_names = ["eye", "nose", "mouth"]
+F_NAMES = ["eye", "nose", "mouth"]
 # feature relative areas
-f_areas = [10, 5, 7]
+F_AREAS = [10, 5, 7]
 # feature relative y
-f_y = [-5, 0, 5]
-# will store all PImage objects
-f_bank = []
+F_Y = [-5, 0, 5]
+# list of lists, will store all PImage objects
+F_BANK = []
 
 
 def load_bank():
-    """Loads images in bank directory. 
+    """Loads images from bank directory
     
     Files in bank directory must begin with the name of a feature, i.e., "eye", "nose", etc.
     
@@ -43,17 +50,17 @@ def load_bank():
         list of lists of PImage: [[PImage00, PImage01, ...], [PImage10, ...], ...]
     """
     
-    global f_bank
-    for name, area in zip(f_names, f_areas):
+    global F_BANK
+    for name, area in zip(F_NAMES, F_AREAS):
         list_temp = []
-        f_bank.append(list_temp)
-        for filename in glob.glob("{}/{}*".format(BANK_DIR, name)):
+        F_BANK.append(list_temp)
+        for filename in glob.glob("{}/{}*".format("../bank", name)):
             img = loadImage(filename)
             img.format = ARGB
 
             # Turns white pixels transparent
             # Source: https://forum.processing.org/one/topic/turn-white-pixels-transparent.html
-            color_test, color_replace = color(255, 255, 255), color(255, 0, 255, 255)
+            color_test = color(255, 255, 255)
             if True:
                 img.loadPixels()
                 for y in range(img.height):
@@ -89,16 +96,45 @@ class Individual(object):
     def __setitem__(self, x, value):
         self.chromosome[x] = value
 
+    def __iter__(self):
+        return self.chromosome.__iter__()
+
 
 def random_individual():
-    """Creates new random individual
+    """Generates a new random individual
 
-    Chromosome is encoded as: [index, index, ...] (integers)
+    Returns:
+        new Individual object
     """
+
     ret = Individual()
-    for name, img_choices in zip(f_names, f_bank):
+    for name, img_choices in zip(F_NAMES, F_BANK):
         ret[name] = random.randint(0, len(img_choices)-1) 
     return ret
+
+
+def draw_individual(individual):
+    
+    for index, img_choices, y_rel in reversed(zip(individual.chromosome.values(), F_BANK, F_Y)):
+        img = img_choices[index]
+        y = y_rel*DIST_MULT-img.height/2
+        x = -img.width/2
+        image(img, x, y)
+
+
+def mutate(individual):
+    """
+    Mutates individual *in place*
+    
+    Mutation changes the index of a feature.
+
+    Returns:
+        None
+    """
+    for key_, value in individual.chromosome.iteritems():
+        if random.random() < MUTATION_PROB:
+            individual[key] = random.randint(0, len(F_BANK[key])-1)
+
 
 def create_child(parents):
     """Creates single individual as a combination of genes taken randomly from parents.
@@ -106,54 +142,33 @@ def create_child(parents):
     Note that individual may have arbitrary number of parents.
     
     Returns:
-        child
+        new Individual object
     """
 
     ret = Individual()
-    for key in parents[0].chromosome:
+    for key in parents[0]:
         ret[key] = random.choice(parents)[key] 
     return ret
 
 
-def mutate(individual):
-    """
-    Mutates individual *in place*
-    
-    In here, a mutation will replace the index of a feature for another 
+####################################################################################################
+# # Generic 
+#
+# The code henceforth can be used in different problems
 
-    Returns:
-        None
-    """
-    for key_, value in individual.chromosome.iteritems():
-        if random.random() < MUTATION_PROB:
-            # if isinstance(value, int):
-            print "fiiiiiiiiiiiiiiiiiiiii"
-            individual[key] = random.randint(0, len(f_bank[key])-1)
-
-
-def draw_individual(individual):
-    for index, img_choices, y_rel in reversed(zip(individual.chromosome.values(), f_bank, f_y)):
-        img = img_choices[index]
-        y = y_rel*Y_MULT-img.height/2
-        x = -img.width/2
-        image(img, x, y)
-
-
-
-###################################################################################
-# Environment setup
-
-# Constants
-
-# Keyboard control setup
+# ## Constants
+#
+# ### Keyboard control setup
+#
 # replace all non-green with random individuals
 KEY_RANDOM = "R"
 # replace all non-green with mutants
 KEY_MUTANTS = "M"
 # replace all non-green with children
 KEY_CHILDREN = "C"
-
-# Visual setup
+#
+# ### Visual setup
+#
 # Canvas dimensions (pixels)
 WIDTH, HEIGHT = 700, 700
 # Scale for rendering the individuals (arbitrary unit)
@@ -161,23 +176,22 @@ WIDTH, HEIGHT = 700, 700
 SCALE_K = 2. / 300
 # spacing between figures (pixels)
 SPACING = 10
-
+#
 # Number of individuals
 POPULATION_SIZE = 36
-
-# Other constants
+#
+# ### Other constants
+#
 # Fitness value for the individuals which the user *likes*
 GREEN = 1
-# Fitness value for the individuals which the user *doesn't like* (no
-# longer used)
-RED = -1
 # White color
 COLOR255 = color(255, 255, 255)
 # Drawing state
 ST_DRAWING = 2
 
-###################################################################################
-# Generic GA framework
+
+#######################################
+# ## Generic-algorithm related routines
 
 def new_population_mutants(population):
     """Generates new population replacing non-green with their mutant versions"""
@@ -218,20 +232,8 @@ def new_population_random(population=None):
     return ret
 
 
-###################################################################################
-# Frontend
-
-def get_num_cols_rows(size_):
-    """Calculates number of panel rows and columns based on population size"""
-    num_rows = int(math.sqrt(POPULATION_SIZE))
-
-    while num_rows >= 1:
-        num_cols = size_ / num_rows
-        if num_cols - int(num_cols) < 0.01:
-            break
-        num_rows -= 1
-    return num_cols, num_rows
-
+#############
+# ## Frontend
 
 # Calculated variables
 #
@@ -247,7 +249,34 @@ scale_ = panel_width * SCALE_K
 state = ST_DRAWING
 
 
-# Processing events
+########################
+# ### Auxiliary routines
+
+def get_num_cols_rows(size_):
+    """Calculates number of panel rows and columns based on population size"""
+    num_rows = int(math.sqrt(POPULATION_SIZE))
+
+    while num_rows >= 1:
+        num_cols = size_ / num_rows
+        if num_cols - int(num_cols) < 0.01:
+            break
+        num_rows -= 1
+    return num_cols, num_rows
+
+
+def mouse_to_k(x, y):
+    """Converts mouse coordinates to index of individual in population"""
+    k = -1
+    x0 = (x - SPACING) % panel_step
+    if x0 <= panel_width:
+        y0 = (y - SPACING) % panel_step
+        if y0 <= panel_width:
+            k = (x - SPACING) / panel_step + (y - SPACING) / panel_step * nc
+    return k
+
+
+############################
+# ### Events from processing
 
 def setup():
     global population
@@ -261,6 +290,13 @@ def setup():
 
 
 def draw():
+    """
+    Drawing loop
+
+    This is implemented as a state machine. The main state is ST_DRAWING. If 
+    one of the KEY_* keys is pressed, a new population will be generated, then
+    fall back to ST_DRAWING
+    """
     global state, population
     if state == ST_DRAWING:
         yborder = SPACING
@@ -309,22 +345,11 @@ def draw():
         state = ST_DRAWING
 
 
-def mouse_to_k(x, y):
-    k = -1
-    x0 = (x - SPACING) % panel_step
-    if x0 <= panel_width:
-        y0 = (y - SPACING) % panel_step
-        if y0 <= panel_width:
-            k = (x - SPACING) / panel_step + (y - SPACING) / panel_step * nc
-    return k
-
-
 def keyPressed():
     global state
     if isinstance(key, int):
         return
     if key.upper() in (KEY_CHILDREN, KEY_MUTANTS, KEY_RANDOM):
-        print "EEEEEEEEEEEEEEEE"
         state = key.upper()
 
 
