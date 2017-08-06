@@ -8,9 +8,11 @@ This branch contains the hands-on sketchbook, presentation slides and image bank
 
 ### Hands-on sketchbook
 
-The directory ``ho`` is an incomplete Processing sketchbook. It already contains some genetic-algorithm related routines and a visual interactive frontend.
+The directory `program` is incomplete. It already contains a visual frontend and some of the genetic-algorithm related routines.
 
 The following routines will be implemented during the hands-on session:
 
-  - ``draw_individual()``
-  - 
+  - `random_individual()`
+  - `draw_individual()`, aka produce the "phenotype"
+  - `mutate()`, one of the genetic "operators"
+  - `create_child()`, another genetic operator
