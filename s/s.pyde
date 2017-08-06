@@ -165,6 +165,9 @@ def create_child(parents):
 
 # ## Constants
 #
+# Number of individuals
+POPULATION_SIZE = 40
+#
 # ### Keyboard control setup
 #
 # replace all non-green with random individuals
@@ -177,15 +180,12 @@ KEY_CHILDREN = "C"
 # ### Visual setup
 #
 # Canvas dimensions (pixels)
-WIDTH, HEIGHT = 700, 700
+WIDTH, HEIGHT = 1000, 700
 # Scale for rendering the individuals (arbitrary unit)
 # (tune this until drawing size is acceptable)
 SCALE_K = 2. / 300
 # spacing between figures (pixels)
 SPACING = 10
-#
-# Number of individuals
-POPULATION_SIZE = 36
 #
 # ### Other constants
 #
@@ -247,14 +247,14 @@ def new_population_random(population=None):
 
 def get_num_cols_rows(size_):
     """Calculates number of panel rows and columns based on population size"""
-    num_rows = int(math.sqrt(POPULATION_SIZE))
+    num_rows = int(math.sqrt(size_))
 
     while num_rows >= 1:
-        num_cols = size_ / num_rows
+        num_cols = float(size_) / num_rows
         if num_cols - int(num_cols) < 0.01:
             break
         num_rows -= 1
-    return num_cols, num_rows
+    return int(num_cols), num_rows
 
 
 def mouse_to_k(x, y):
@@ -273,10 +273,11 @@ def mouse_to_k(x, y):
 #
 # Number of panel rows and columns
 nc, nr = get_num_cols_rows(POPULATION_SIZE)
+print "{} columns X {} rows = {}".format(nc, nr, POPULATION_SIZE)
 # Panel width (*and also height*) in pixels
-panel_width = int((WIDTH - SPACING * (nc + 1)) / nc)
+panel_width = min(int((WIDTH - SPACING * (nc + 1)) / nc), int((HEIGHT - SPACING * (nr + 1)) / nr))
 # Distance between the left corners of panels. Note that this is a float
-panel_step = (WIDTH - SPACING * (nc + 1)) / nc + SPACING
+panel_step = min((WIDTH - SPACING * (nc + 1)) / nc + SPACING, (HEIGHT - SPACING * (nr + 1)) / nr + SPACING)
 # Actual scale value
 scale_ = panel_width * SCALE_K
 # Current machine state
