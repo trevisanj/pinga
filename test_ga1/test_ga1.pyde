@@ -124,10 +124,11 @@ def mutate(individual):
     Returns:
         None
     """
-    for key_, value in individual.iteritems():
+    for key_, value in individual.chromosome.iteritems():
         if random.random() < MUTATION_PROB:
-            if isinstance(value, int):
-                individual[key] = random.randint(0, len(f_bank[key])-1)
+            # if isinstance(value, int):
+            print "fiiiiiiiiiiiiiiiiiiiii"
+            individual[key] = random.randint(0, len(f_bank[key])-1)
 
 
 def draw_individual(individual):
@@ -157,12 +158,12 @@ KEY_CHILDREN = "C"
 WIDTH, HEIGHT = 700, 700
 # Scale for rendering the individuals (arbitrary unit)
 # (tune this until drawing size is acceptable)
-SCALE_K = 1. / 300
+SCALE_K = 2. / 300
 # spacing between figures (pixels)
 SPACING = 10
 
 # Number of individuals
-POPULATION_SIZE = 9
+POPULATION_SIZE = 36
 
 # Other constants
 # Fitness value for the individuals which the user *likes*
@@ -337,4 +338,3 @@ def mouseClicked():
         population[k].mark = GREEN
     elif mouseButton == 39:  # right mouse button
         population[k].mark = 0  # No longer green
-
