@@ -5,7 +5,7 @@ Interactive Genetic Algorithm in Processing (Python mode)
 
 ## Contents
 
-This branch contains the hands-on sketchbook, presentation slides and image bank.
+This branch contains the hands-on sketchbook, image bank, and presentation slides.
 
 ### Hands-on sketchbook
 
@@ -17,3 +17,7 @@ The following routines will be implemented during the hands-on session:
   - `draw_individual()`, aka produce the "phenotype"
   - `mutate()`, one of the genetic "operators"
   - `create_child()`, another genetic operator
+
+### Image bank
+
+The directory `bank` contains images of eyes, noses and mouths. New images can be downloaded from the web and simply saved into this folder to be made available for the program. However, all images must start either with the word "eye", "nose", or "mouth" in order to be found by the program.
