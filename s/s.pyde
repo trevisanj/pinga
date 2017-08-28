@@ -214,7 +214,7 @@ def new_population_mutants(population):
 
 def new_population_children(population):
     """Generates new population replacing non-green with children from green individuals"""
-    ret = _keep_green(population)
+    ret = _keep(population, MARK_GREEN)
     ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
     return ret
 
