@@ -5,7 +5,14 @@ Interactive Genetic Algorithm in Processing (Python mode)
 
 ## Contents
 
-This branch contains the hands-on sketchbook, image bank, and presentation slides.
+```
+ handson: sketchbook for hands-on session (see below)
+    bank: image bank (see below)
+   faces: hands-on solution
+sketches: another "species" using the same interactive GA engine
+```
+
+Hands-on sketchbook, image bank, and presentation slides.
 
 ### Hands-on sketchbook
 
@@ -21,3 +28,4 @@ The following routines will be implemented during the hands-on session:
 ### Image bank
 
 The directory `bank` contains images of eyes, noses and mouths. New images can be downloaded from the web and simply saved into this folder to be made available for the program. However, all images must start either with the word "eye", "nose", or "mouth" in order to be found by the program.
+

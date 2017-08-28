@@ -55,11 +55,12 @@ def load_bank():
     
     """
     
+    print("Loading image bank...")
     global F_BANK
     for name, area in zip(F_NAMES, F_AREAS):
         list_temp = []
         F_BANK.append(list_temp)
-        for filename in glob.glob("{}/{}*".format("../bank", name)):
+        for filename in glob.glob("{}/{}*".format("../../bank", name)):
             img = loadImage(filename)
             img.format = ARGB
 
@@ -83,7 +84,7 @@ def load_bank():
             img.resize(int(img.width*factor), int(img.height*factor))
 
             list_temp.append(img)
-
+    print("...done!")
 
 class Individual(object):
     """Store chromosome and mark/fitness"""

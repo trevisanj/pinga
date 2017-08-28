@@ -9,16 +9,25 @@ The task is to implement the following methods:
     
 See ../README.md for more detailed information.
 """
+
 import math
 import random
 import copy
 import glob
 from collections import OrderedDict
 
-
-# # Globals
+####################################################################################################
+# # Specific implementation
 #
-# ## General setup
+# This part of the code contains the implementation of the "species" in case:
+#
+# - "chromosome" representation ("genotype")
+# - genetic operators
+# - drawing individual ("phenotype")
+
+# ## Globals
+#
+# ### General setup
 #
 # Mutation probability for each gene
 MUTATION_PROB = .2
@@ -27,7 +36,7 @@ AREA_MULT = 500.
 # Scaling factor affecting the distances between images
 DIST_MULT = 7.
 #
-# ## F_* variables: "feature" data
+# ### F_* variables: "feature" data
 #
 # These variables may be seen as columns in a table.
 #
@@ -37,24 +46,25 @@ F_NAMES = ["eye", "nose", "mouth"]
 F_AREAS = [10, 5, 7]
 # feature relative y
 F_Y = [-5, 0, 5]
-# list of lists, will store all PImage objects
+# list of lists, will store all PImage objects:
+#
+#     [[PImage00, PImage01, ...], [PImage10, ...], ...]
 F_BANK = []
 
 
 def load_bank():
-    """Loads images from bank directory
-    
+    """Loads images from bank directory into F_BANK global variable
+
     Files in bank directory must begin with the name of a feature, i.e., "eye", "nose", etc.
-    
-    Returns:
-        list of lists of PImage: [[PImage00, PImage01, ...], [PImage10, ...], ...]
+
     """
-    
+
+    print("Loading image bank...")
     global F_BANK
     for name, area in zip(F_NAMES, F_AREAS):
         list_temp = []
         F_BANK.append(list_temp)
-        for filename in glob.glob("{}/{}*".format("../bank", name)):
+        for filename in glob.glob("{}/{}*".format("../../bank", name)):
             img = loadImage(filename)
             img.format = ARGB
 
@@ -64,20 +74,21 @@ def load_bank():
             if True:
                 img.loadPixels()
                 for y in range(img.height):
-                    i0 = y*img.width
+                    i0 = y * img.width
                     for x in range(img.width):
-                        i = i0+x
+                        i = i0 + x
                         if img.pixels[i] == color_test:
                             img.pixels[i] = img.pixels[i] & 0x00FFFFFF
                 img.updatePixels()
-                                            
+
             # Resizes image
-            area_original = img.width*img.height
-            area_wanted = float(area*AREA_MULT)
-            factor = math.sqrt(area_wanted/area_original)
-            img.resize(int(img.width*factor), int(img.height*factor))
+            area_original = img.width * img.height
+            area_wanted = float(area * AREA_MULT)
+            factor = math.sqrt(area_wanted / area_original)
+            img.resize(int(img.width * factor), int(img.height * factor))
 
             list_temp.append(img)
+    print("...done!")
 
 
 class Individual(object):
@@ -89,10 +100,10 @@ class Individual(object):
 
     def __len__(self):
         return len(self.chromosome)
-    
+
     def __getitem__(self, feature_name):
         return self.chromosome[feature_name]
-    
+
     def __setitem__(self, feature_name, value):
         self.chromosome[feature_name] = value
 
@@ -107,63 +118,62 @@ def random_individual():
         new Individual object
     """
 
-    ret = Individual()
-    for name, img_choices in zip(F_NAMES, F_BANK):
-        ret[name] = random.randint(0, len(img_choices)-1) 
-    return ret
-
 
 def draw_individual(individual):
     """This function produces the "phenotype", i.e., the visual representation of the individual"""
-    
-    for feature_name, img_choices, y_rel in reversed(zip(individual, F_BANK, F_Y)):
-        index = individual[feature_name]
-        img = img_choices[index]
-        y = y_rel*DIST_MULT-img.height/2
-        x = -img.width/2
-        image(img, x, y)
 
 
 def mutate(individual):
     """
     Mutates individual *in place*
-    
+
     Mutation changes the index of a feature.
 
     Returns:
         None
     """
-    for i, feature_name in enumerate(individual):
-        if random.random() < MUTATION_PROB:
-            temp = individual[feature_name]
-            individual[feature_name] = random.randint(0, len(F_BANK[i])-1)
 
 
 def create_child(parents):
     """Creates single individual as a combination of genes taken randomly from parents.
-    
+
     Note that individual may have arbitrary number of parents.
-    
+
     Returns:
         new Individual object
     """
 
-    ret = Individual()
-    for key in parents[0]:
-        ret[key] = random.choice(parents)[key] 
-    return ret
-
-
-
-
-
 
 ####################################################################################################
-# # Generic 
+# # Generic engine
 #
-# The code henceforth can be used in different problems
+# The code henceforth can be used with different "species". It roughly does the following:
+#
+# - draws entire population
+# - handles mouse and keyboard input
+# - implements the GA generation logic
+#
+# ## How to play
+#
+# Select/de-select individuals with the mouse according with your own subjective criterion,
+# then generate a new population using one of three options on the keyboard ("R"/"M"/"C").
+#
+# Selected (GREEN) individuals are always kept intact for the next generation.
+#
+# ### Controls
+#
+# - Left mouse button: select individuals (turns tile background GREEN)
+# - Right mouse button: de-selects individuals (turns tile background WHITE)
+# - "R" key: new generation of random individuals. Generates a new population of random individuals
+# - "M" key: new generation of mutants. Mutates non-GREEN individuals
+# - "C" key: new generation of children. Generates a new population of children of the GREEN
+#            individuals
+#
 
 # ## Constants
+#
+# Number of individuals
+POPULATION_SIZE = 16
 #
 # ### Keyboard control setup
 #
@@ -184,14 +194,11 @@ SCALE_K = 2. / 300
 # spacing between figures (pixels)
 SPACING = 10
 #
-# Number of individuals
-POPULATION_SIZE = 36
-#
 # ### Other constants
 #
-# Fitness value for the individuals which the user *prefers* (marked green)
+# Fitness value for the selected individuals
 MARK_GREEN = 1
-# Fitness value for the remaining individuals 
+# Fitness value for the non-selected individuals
 MARK_WHITE = 0
 # White color
 COLOR255 = color(255, 255, 255)
@@ -204,24 +211,19 @@ ST_DRAWING = 2
 
 def new_population_mutants(population):
     """Generates new population replacing non-green with their mutant versions"""
-    
-    green_ = _keep(population)
-    other = _keep(population, MARK_WHITE)
+
+    green_ = [x for x in population if x.mark == MARK_GREEN]
+    other = [x for x in population if x.mark == MARK_WHITE]
     for individual in other:
         mutate(individual)
-    return green_+other
+    return green_ + other
 
 
 def new_population_children(population):
     """Generates new population replacing non-green with children from green individuals"""
-    ret = _keep_green(population)
+    ret = [x for x in population if x.mark == MARK_GREEN]
     ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
     return ret
-
-
-def _keep(population, mark=MARK_GREEN):
-    """Filters desired individuals"""
-    return [x for x in population if x.mark == mark]
 
 
 def new_population_random(population=None):
@@ -233,7 +235,7 @@ def new_population_random(population=None):
     Returns:
         list: new population
     """
-    ret = _keep(population) if population is not None else []
+    ret = [x for x in population if x.mark == MARK_GREEN] if population is not None else []
     ret.extend([random_individual()
                 for i in range(POPULATION_SIZE - len(ret))])
     return ret
@@ -247,14 +249,14 @@ def new_population_random(population=None):
 
 def get_num_cols_rows(size_):
     """Calculates number of panel rows and columns based on population size"""
-    num_rows = int(math.sqrt(POPULATION_SIZE))
+    num_rows = int(math.sqrt(size_))
 
     while num_rows >= 1:
-        num_cols = size_ / num_rows
+        num_cols = float(size_) / num_rows
         if num_cols - int(num_cols) < 0.01:
             break
         num_rows -= 1
-    return num_cols, num_rows
+    return int(num_cols), num_rows
 
 
 def mouse_to_k(x, y):
@@ -273,10 +275,13 @@ def mouse_to_k(x, y):
 #
 # Number of panel rows and columns
 nc, nr = get_num_cols_rows(POPULATION_SIZE)
+print
+"{} columns X {} rows = {}".format(nc, nr, POPULATION_SIZE)
 # Panel width (*and also height*) in pixels
-panel_width = int((WIDTH - SPACING * (nc + 1)) / nc)
+panel_width = min(int((WIDTH - SPACING * (nc + 1)) / nc), int((HEIGHT - SPACING * (nr + 1)) / nr))
 # Distance between the left corners of panels. Note that this is a float
-panel_step = (WIDTH - SPACING * (nc + 1)) / nc + SPACING
+panel_step = min((WIDTH - SPACING * (nc + 1)) / nc + SPACING,
+                 (HEIGHT - SPACING * (nr + 1)) / nr + SPACING)
 # Actual scale value
 scale_ = panel_width * SCALE_K
 # Current machine state
@@ -301,7 +306,7 @@ def draw():
     """
     Drawing loop
 
-    This is implemented as a state machine. The main state is ST_DRAWING. If 
+    This is implemented as a state machine. The main state is ST_DRAWING. If
     one of the KEY_* keys is pressed, a new population will be generated, then
     fall back to ST_DRAWING.
 
@@ -348,7 +353,7 @@ def draw():
                 xborder += panel_step
                 k += 1
             yborder += panel_step
-    elif state  == KEY_CHILDREN:
+    elif state == KEY_CHILDREN:
         num_green = len([x for x in population if x.mark == MARK_GREEN])
         if num_green == 0:
             # cannot mutate or generate children, no green, **beep!**
