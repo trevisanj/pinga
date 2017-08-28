@@ -1,14 +1,10 @@
 """
-Incomplete program for a genetic algorithm tutorial.
+PInGA - Processing Intactive Genetic Algorithm
 
-The task is to implement the following methods:
-    - random_individual()
-    - draw_individual()
-    - mutate()
-    - create_child() 
-    
-See ../README.md for more detailed information.
+"Species": sketch
 """
+
+
 import math
 import random
 import copy
@@ -16,68 +12,38 @@ import glob
 from collections import OrderedDict
 
 
-# # Globals
+####################################################################################################
+# # Specific implementation
 #
-# ## General setup
+# This part of the code contains the implementation of the "species" in case:
+#   
+# - "chromosome" representation ("genotype") 
+# - genetic operators    
+# - drawing individual ("phenotype")
+
+# ## Globals
+#
+# ### General setup
 #
 # Mutation probability for each gene
 MUTATION_PROB = .2
-# Scaling factor affecting the sizes of the images drawn
-AREA_MULT = 500.
-# Scaling factor affecting the distances between images
-DIST_MULT = 7.
-#
-# ## F_* variables: "feature" data
-#
-# These variables may be seen as columns in a table.
-#
-# feature names (will be used to search for filenames)
-F_NAMES = ["eye", "nose", "mouth"]
-# feature relative areas
-F_AREAS = [10, 5, 7]
-# feature relative y
-F_Y = [-5, 0, 5]
-# list of lists, will store all PImage objects
-F_BANK = []
+# Number of genes in chromosome, which is equivalent to number of drawing steps
+NUM_GENES = 50
+# Minimum length of line
+MIN_STEP = 3
+# Maximum length of line
+MAX_STEP = 20
+# Maximum "turn", i.e., angle change relative to direction of previous step
+MAX_TURN = 90
+# Maximum number of genes mutated in a mutation operation
+MAX_MUTATIONS = 50
+# Maximum number of "genes" to be kept together at child generation
+MAX_GENES_TOGETHER = 20
+# There are two types of phenotype
+# - False: angle in chromosome is relative to arrow pointing right
+# - True: angle in chromosome is relative to previous angle
+FLAG_INCREMENTAL_ANGLE = False
 
-
-def load_bank():
-    """Loads images from bank directory
-    
-    Files in bank directory must begin with the name of a feature, i.e., "eye", "nose", etc.
-    
-    Returns:
-        list of lists of PImage: [[PImage00, PImage01, ...], [PImage10, ...], ...]
-    """
-    
-    global F_BANK
-    for name, area in zip(F_NAMES, F_AREAS):
-        list_temp = []
-        F_BANK.append(list_temp)
-        for filename in glob.glob("{}/{}*".format("../bank", name)):
-            img = loadImage(filename)
-            img.format = ARGB
-
-            # Turns white pixels transparent
-            # Source: https://forum.processing.org/one/topic/turn-white-pixels-transparent.html
-            color_test = color(255, 255, 255)
-            if True:
-                img.loadPixels()
-                for y in range(img.height):
-                    i0 = y*img.width
-                    for x in range(img.width):
-                        i = i0+x
-                        if img.pixels[i] == color_test:
-                            img.pixels[i] = img.pixels[i] & 0x00FFFFFF
-                img.updatePixels()
-                                            
-            # Resizes image
-            area_original = img.width*img.height
-            area_wanted = float(area*AREA_MULT)
-            factor = math.sqrt(area_wanted/area_original)
-            img.resize(int(img.width*factor), int(img.height*factor))
-
-            list_temp.append(img)
 
 
 class Individual(object):
@@ -85,19 +51,67 @@ class Individual(object):
 
     def __init__(self):
         self.mark = 0
-        self.chromosome = OrderedDict()
+        # [[angle0, step0], [angle1, step1], ...]
+        self.chromosome = []
 
     def __len__(self):
         return len(self.chromosome)
-    
+
     def __getitem__(self, feature_name):
         return self.chromosome[feature_name]
-    
+
     def __setitem__(self, feature_name, value):
         self.chromosome[feature_name] = value
 
     def __iter__(self):
         return self.chromosome.__iter__()
+
+
+def draw_individual(individual):
+    """
+    Renders individual on screen
+
+    Args:
+        individual: sequence with pair number of elements.
+            [(angle_in_degrees, step_in_pixels), ...]
+    """
+
+    # first pass to determine width & height, collect points
+    xmin, ymin, xmax, ymax = 99999, 99999, -99999, -99999
+    x, y = 0, 0
+    points = [(x, y)]
+    angle_rad = 0
+    for i in range(0, NUM_GENES):
+        gene = individual.chromosome[i]
+        if FLAG_INCREMENTAL_ANGLE:
+            angle_rad += gene[0] * math.pi / 180
+        else:
+            angle_rad = gene[0] * math.pi / 180
+        step = gene[1]
+        x += step * scale_ * math.cos(angle_rad)
+        y += step * scale_ * math.sin(angle_rad)
+        points.append((x, y))
+        xmin = min(x, xmin)
+        xmax = max(x, xmax)
+        ymin = min(y, ymin)
+        ymax = max(y, ymax)
+    w, h = xmax - xmin, ymax - ymin
+
+    pushMatrix()
+
+    # translate(-(panel_width - w) / 2 - xmin,
+    #           -(panel_width - h) / 2 - ymin)
+    translate(-w/2-xmin, -h/2-ymin)
+    stroke(0)
+    fill(0)
+    ellipse(0, 0, 4, 4)  # Marks starting point
+    noFill()
+    beginShape()
+    for point in points:
+        vertex(*point)
+    endShape()
+
+    popMatrix()
 
 
 def random_individual():
@@ -108,20 +122,13 @@ def random_individual():
     """
 
     ret = Individual()
-    for name, img_choices in zip(F_NAMES, F_BANK):
-        ret[name] = random.randint(0, len(img_choices)-1) 
+    for i in range(NUM_GENES):
+        angle = (random.randint(0, 360) if i == 0 else random.randint(-MAX_TURN, MAX_TURN)) \
+            if FLAG_INCREMENTAL_ANGLE else random.randint(0, 360)
+        step = random.randint(MIN_STEP, MAX_STEP)
+        ret.chromosome.append([angle, step])
     return ret
 
-
-def draw_individual(individual):
-    """This function produces the "phenotype", i.e., the visual representation of the individual"""
-    
-    for feature_name, img_choices, y_rel in reversed(zip(individual, F_BANK, F_Y)):
-        index = individual[feature_name]
-        img = img_choices[index]
-        y = y_rel*DIST_MULT-img.height/2
-        x = -img.width/2
-        image(img, x, y)
 
 
 def mutate(individual):
@@ -133,10 +140,14 @@ def mutate(individual):
     Returns:
         None
     """
-    for i, feature_name in enumerate(individual):
-        if random.random() < MUTATION_PROB:
-            temp = individual[feature_name]
-            individual[feature_name] = random.randint(0, len(F_BANK[i])-1)
+
+    for i in range(MAX_MUTATIONS):
+        if random.random() <= MUTATION_PROB:
+            # mutates either the angle or the step
+            if random.random() < .5:
+                individual.chromosome[i][0] += (random.random() - .5) * 10
+            else:
+                individual.chromosome[i][1] += (random.random() - .5) * 20
 
 
 def create_child(parents):
@@ -149,8 +160,14 @@ def create_child(parents):
     """
 
     ret = Individual()
-    for key in parents[0]:
-        ret[key] = random.choice(parents)[key] 
+    qtd = 0
+    for i in range(len(parents[0])):
+        if qtd == 0:
+            parent_now = random.choice(parents)
+            qtd = random.randint(1, MAX_GENES_TOGETHER)
+        if qtd > 0:
+            ret.chromosome.append(copy.copy(parent_now.chromosome[i]))
+            qtd -= 1
     return ret
 
 
@@ -159,14 +176,35 @@ def create_child(parents):
 
 
 ####################################################################################################
-# # Generic 
+# # Generic engine 
 #
-# The code henceforth can be used in different problems
+# The code henceforth can be used with different "species". It roughly does the following:
+#
+# - draws entire population
+# - handles mouse and keyboard input
+# - implements the GA generation logic
+#
+# ## How to play
+#
+# Select/de-select individuals with the mouse according with your own subjective criterion, 
+# then generate a new population using one of three options on the keyboard ("R"/"M"/"C").
+#
+# Selected (GREEN) individuals are always kept intact for the next generation. 
+# 
+# ### Controls
+# 
+# - Left mouse button: select individuals (turns tile background GREEN)
+# - Right mouse button: de-selects individuals (turns tile background WHITE)
+# - "R" key: new generation of random individuals. Generates a new population of random individuals
+# - "M" key: new generation of mutants. Mutates non-GREEN individuals
+# - "C" key: new generation of children. Generates a new population of children of the GREEN 
+#            individuals
+#
 
 # ## Constants
 #
 # Number of individuals
-POPULATION_SIZE = 40
+POPULATION_SIZE = 16
 #
 # ### Keyboard control setup
 #
@@ -180,18 +218,18 @@ KEY_CHILDREN = "C"
 # ### Visual setup
 #
 # Canvas dimensions (pixels)
-WIDTH, HEIGHT = 1000, 700
+WIDTH, HEIGHT = 700, 700
 # Scale for rendering the individuals (arbitrary unit)
 # (tune this until drawing size is acceptable)
-SCALE_K = 2. / 300
+SCALE_K = 1.5 / 300
 # spacing between figures (pixels)
 SPACING = 10
 #
 # ### Other constants
 #
-# Fitness value for the individuals which the user *prefers* (marked green)
+# Fitness value for the selected individuals
 MARK_GREEN = 1
-# Fitness value for the remaining individuals 
+# Fitness value for the non-selected individuals 
 MARK_WHITE = 0
 # White color
 COLOR255 = color(255, 255, 255)
@@ -205,8 +243,8 @@ ST_DRAWING = 2
 def new_population_mutants(population):
     """Generates new population replacing non-green with their mutant versions"""
     
-    green_ = _keep(population)
-    other = _keep(population, MARK_WHITE)
+    green_ = [x for x in population if x.mark == MARK_GREEN]
+    other = [x for x in population if x.mark == MARK_WHITE]
     for individual in other:
         mutate(individual)
     return green_+other
@@ -214,14 +252,9 @@ def new_population_mutants(population):
 
 def new_population_children(population):
     """Generates new population replacing non-green with children from green individuals"""
-    ret = _keep(population, MARK_GREEN)
+    ret = [x for x in population if x.mark == MARK_GREEN]
     ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
     return ret
-
-
-def _keep(population, mark=MARK_GREEN):
-    """Filters desired individuals"""
-    return [x for x in population if x.mark == mark]
 
 
 def new_population_random(population=None):
@@ -233,7 +266,7 @@ def new_population_random(population=None):
     Returns:
         list: new population
     """
-    ret = _keep(population) if population is not None else []
+    ret = [x for x in population if x.mark == MARK_GREEN] if population is not None else []
     ret.extend([random_individual()
                 for i in range(POPULATION_SIZE - len(ret))])
     return ret
@@ -292,9 +325,8 @@ def setup():
     size(WIDTH, HEIGHT)
     stroke(0)
     background(220)
-    noSmooth()
+    smooth()
     frameRate(10)
-    load_bank()
     population = new_population_random()
 
 
