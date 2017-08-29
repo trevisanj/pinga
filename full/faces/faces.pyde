@@ -113,20 +113,31 @@ def random_individual():
         new Individual object
     """
 
+    # list(enumerate(F_NAMES)) = [(0, "eye"), (1, "nose"), (2, "mouth")]
+
     ret = Individual()
-    for name, img_choices in zip(F_NAMES, F_BANK):
-        ret[name] = random.randint(0, len(img_choices)-1) 
+    for i, feature_name in enumerate(F_NAMES):
+        ret[feature_name] = random.randint(0, len(F_BANK[i])-1)
     return ret
 
 
 def draw_individual(individual):
     """This function produces the "phenotype", i.e., the visual representation of the individual"""
-    
-    for feature_name, img_choices, y_rel in reversed(zip(individual, F_BANK, F_Y)):
-        index = individual[feature_name]
-        img = img_choices[index]
-        y = y_rel*DIST_MULT-img.height/2
+
+    # list(enumerate(individual)) = [(0, "eye"), (1, "nose"), (2, "mouth")]
+    # list(reversed(^)) = [(2, "mouth"), (1, "nose"), (0, "eye")]
+    #
+    # The loop is reversed because it looks better to draw an eye over a nose over a mouth than
+    # the opposite
+
+    for i, feature_name in reversed(list(enumerate(individual))):
+        index = individual[feature_name]  # "gene": index of feature
+        img = F_BANK[i][index]
+        # Calculates image corner (x, y) so that:
+        # - x-center of the image is at x=0
+        # - y-center of the image is at position given by F_Y[i] (with scale correction of course)
         x = -img.width/2
+        y = F_Y[i]*DIST_MULT-img.height/2
         image(img, x, y)
 
 
@@ -141,7 +152,6 @@ def mutate(individual):
     """
     for i, feature_name in enumerate(individual):
         if random.random() < MUTATION_PROB:
-            temp = individual[feature_name]
             individual[feature_name] = random.randint(0, len(F_BANK[i])-1)
 
 
@@ -229,9 +239,35 @@ ST_DRAWING = 2
 #######################################
 # ## Generic-algorithm related routines
 
+def new_population_random(population=None):
+    """
+    Generates new population replacing non-green with random individuals
+
+    Args:
+        population: list of Invididual
+
+    Returns:
+        list: new population
+    """
+    if population is None:
+        population = []
+    ret = [x for x in population if x.mark == MARK_GREEN]
+    ret.extend([random_individual()
+                for i in range(POPULATION_SIZE - len(ret))])
+    return ret
+
+
 def new_population_mutants(population):
-    """Generates new population replacing non-green with their mutant versions"""
-    
+    """
+    Generates new population replacing non-green with their mutant versions
+
+    Args:
+        population: list of Invididual
+
+    Returns:
+        list: new population
+    """
+
     green_ = [x for x in population if x.mark == MARK_GREEN]
     other = [x for x in population if x.mark == MARK_WHITE]
     for individual in other:
@@ -240,14 +276,8 @@ def new_population_mutants(population):
 
 
 def new_population_children(population):
-    """Generates new population replacing non-green with children from green individuals"""
-    ret = [x for x in population if x.mark == MARK_GREEN]
-    ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
-    return ret
-
-
-def new_population_random(population=None):
-    """Generates new population replacing non-green with random individuals
+    """
+    Generates new population replacing non-green with children of green individuals
 
     Args:
         population: list of Invididual
@@ -255,9 +285,9 @@ def new_population_random(population=None):
     Returns:
         list: new population
     """
-    ret = [x for x in population if x.mark == MARK_GREEN] if population is not None else []
-    ret.extend([random_individual()
-                for i in range(POPULATION_SIZE - len(ret))])
+
+    ret = [x for x in population if x.mark == MARK_GREEN]
+    ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
     return ret
 
 
@@ -348,11 +378,13 @@ def draw():
                 individual = population[k]
 
                 fill_ = COLOR255
-                if xborder <= mouseX <= xborder + panel_width and yborder <= mouseY <= yborder + panel_width:
+                if xborder <= mouseX <= xborder + panel_width and \
+                   yborder <= mouseY <= yborder + panel_width:
+                    # If mouse pointer is inside tile, paints tile yellow
                     fill_ = lerpColor(color(255, 255, 0), fill_, .5)
 
                 elif individual.mark == MARK_GREEN:
-                    # green, like it
+                    # If individual is selected, paints tile green
                     fill_ = lerpColor(
                         lerpColor(color(0, 255, 0), COLOR255, .5), fill_, .5)
 
@@ -371,17 +403,19 @@ def draw():
                 xborder += panel_step
                 k += 1
             yborder += panel_step
+
     elif state  == KEY_CHILDREN:
         num_green = len([x for x in population if x.mark == MARK_GREEN])
         if num_green == 0:
-            # cannot mutate or generate children, no green, **beep!**
-            print("\a")
+            print("Cannot generate children, no individuals selected!")
         else:
             population = new_population_children(population)
         state = ST_DRAWING
+
     elif state == KEY_MUTANTS:
         population = new_population_mutants(population)
         state = ST_DRAWING
+
     elif state == KEY_RANDOM:
         population = new_population_random(population)
         state = ST_DRAWING
@@ -398,7 +432,7 @@ def keyPressed():
 def mouseClicked():
     global population
     k = mouse_to_k(mouseX, mouseY)
-    print("k = {}; mouseButton = {}".format(k, mouseButton))
+    # print("k = {}; mouseButton = {}".format(k, mouseButton))
     if k == -1:
         return
     if mouseButton == 37:  # left mouse button

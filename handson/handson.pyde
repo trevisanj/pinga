@@ -1,20 +1,16 @@
 """
-Incomplete program for a genetic algorithm tutorial.
+PInGA - Processing Intactive Genetic Algorithm
 
-The task is to implement the following methods:
-    - random_individual()
-    - draw_individual()
-    - mutate()
-    - create_child() 
-    
-See ../README.md for more detailed information.
+"Species": 3-featured face
 """
+
 
 import math
 import random
 import copy
 import glob
 from collections import OrderedDict
+
 
 ####################################################################################################
 # # Specific implementation
@@ -56,7 +52,6 @@ def load_bank():
     """Loads images from bank directory into F_BANK global variable
 
     Files in bank directory must begin with the name of a feature, i.e., "eye", "nose", etc.
-
     """
 
     print("Loading image bank...")
@@ -74,18 +69,18 @@ def load_bank():
             if True:
                 img.loadPixels()
                 for y in range(img.height):
-                    i0 = y * img.width
+                    i0 = y*img.width
                     for x in range(img.width):
-                        i = i0 + x
+                        i = i0+x
                         if img.pixels[i] == color_test:
                             img.pixels[i] = img.pixels[i] & 0x00FFFFFF
                 img.updatePixels()
 
             # Resizes image
-            area_original = img.width * img.height
-            area_wanted = float(area * AREA_MULT)
-            factor = math.sqrt(area_wanted / area_original)
-            img.resize(int(img.width * factor), int(img.height * factor))
+            area_original = img.width*img.height
+            area_wanted = float(area*AREA_MULT)
+            factor = math.sqrt(area_wanted/area_original)
+            img.resize(int(img.width*factor), int(img.height*factor))
 
             list_temp.append(img)
     print("...done!")
@@ -209,25 +204,9 @@ ST_DRAWING = 2
 #######################################
 # ## Generic-algorithm related routines
 
-def new_population_mutants(population):
-    """Generates new population replacing non-green with their mutant versions"""
-
-    green_ = [x for x in population if x.mark == MARK_GREEN]
-    other = [x for x in population if x.mark == MARK_WHITE]
-    for individual in other:
-        mutate(individual)
-    return green_ + other
-
-
-def new_population_children(population):
-    """Generates new population replacing non-green with children from green individuals"""
-    ret = [x for x in population if x.mark == MARK_GREEN]
-    ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
-    return ret
-
-
 def new_population_random(population=None):
-    """Generates new population replacing non-green with random individuals
+    """
+    Generates new population replacing non-green with random individuals
 
     Args:
         population: list of Invididual
@@ -235,10 +214,30 @@ def new_population_random(population=None):
     Returns:
         list: new population
     """
-    ret = [x for x in population if x.mark == MARK_GREEN] if population is not None else []
-    ret.extend([random_individual()
-                for i in range(POPULATION_SIZE - len(ret))])
-    return ret
+
+
+def new_population_mutants(population):
+    """
+    Generates new population replacing non-green with their mutant versions
+
+    Args:
+        population: list of Invididual
+
+    Returns:
+        list: new population
+    """
+
+
+def new_population_children(population):
+    """
+    Generates new population replacing non-green with children of green individuals
+
+    Args:
+        population: list of Invididual
+
+    Returns:
+        list: new population
+    """
 
 
 #############
@@ -275,13 +274,11 @@ def mouse_to_k(x, y):
 #
 # Number of panel rows and columns
 nc, nr = get_num_cols_rows(POPULATION_SIZE)
-print
-"{} columns X {} rows = {}".format(nc, nr, POPULATION_SIZE)
+print "{} columns X {} rows = {}".format(nc, nr, POPULATION_SIZE)
 # Panel width (*and also height*) in pixels
 panel_width = min(int((WIDTH - SPACING * (nc + 1)) / nc), int((HEIGHT - SPACING * (nr + 1)) / nr))
 # Distance between the left corners of panels. Note that this is a float
-panel_step = min((WIDTH - SPACING * (nc + 1)) / nc + SPACING,
-                 (HEIGHT - SPACING * (nr + 1)) / nr + SPACING)
+panel_step = min((WIDTH - SPACING * (nc + 1)) / nc + SPACING, (HEIGHT - SPACING * (nr + 1)) / nr + SPACING)
 # Actual scale value
 scale_ = panel_width * SCALE_K
 # Current machine state
@@ -330,11 +327,13 @@ def draw():
                 individual = population[k]
 
                 fill_ = COLOR255
-                if xborder <= mouseX <= xborder + panel_width and yborder <= mouseY <= yborder + panel_width:
+                if xborder <= mouseX <= xborder + panel_width and \
+                   yborder <= mouseY <= yborder + panel_width:
+                    # If mouse pointer is inside tile, paints tile yellow
                     fill_ = lerpColor(color(255, 255, 0), fill_, .5)
 
                 elif individual.mark == MARK_GREEN:
-                    # green, like it
+                    # If individual is selected, paints tile green
                     fill_ = lerpColor(
                         lerpColor(color(0, 255, 0), COLOR255, .5), fill_, .5)
 
@@ -353,17 +352,19 @@ def draw():
                 xborder += panel_step
                 k += 1
             yborder += panel_step
-    elif state == KEY_CHILDREN:
+
+    elif state  == KEY_CHILDREN:
         num_green = len([x for x in population if x.mark == MARK_GREEN])
         if num_green == 0:
-            # cannot mutate or generate children, no green, **beep!**
-            print("\a")
+            print("Cannot generate children, no individuals selected!")
         else:
             population = new_population_children(population)
         state = ST_DRAWING
+
     elif state == KEY_MUTANTS:
         population = new_population_mutants(population)
         state = ST_DRAWING
+
     elif state == KEY_RANDOM:
         population = new_population_random(population)
         state = ST_DRAWING
@@ -380,7 +381,7 @@ def keyPressed():
 def mouseClicked():
     global population
     k = mouse_to_k(mouseX, mouseY)
-    print("k = {}; mouseButton = {}".format(k, mouseButton))
+    # print("k = {}; mouseButton = {}".format(k, mouseButton))
     if k == -1:
         return
     if mouseButton == 37:  # left mouse button
