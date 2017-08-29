@@ -12,8 +12,6 @@ Interactive Genetic Algorithm in Processing (Python mode)
 sketches: another "species" using the same interactive GA engine
 ```
 
-Hands-on sketchbook, image bank, and presentation slides.
-
 ### Hands-on sketchbook
 
 The directory `handson` is incomplete. It already contains a visual 
