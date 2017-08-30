@@ -1,5 +1,5 @@
 """
-PInGA - Processing Intactive Genetic Algorithm
+PInGA - Processing Interactive Genetic Algorithm
 
 "Species": sketch
 """

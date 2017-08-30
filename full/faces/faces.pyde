@@ -1,5 +1,5 @@
 """
-PInGA - Processing Intactive Genetic Algorithm
+PInGA - Processing Interactive Genetic Algorithm
 
 "Species": 3-featured face
 """
@@ -89,6 +89,8 @@ def load_bank():
 class Individual(object):
     """Store chromosome and mark/fitness"""
 
+    # Python data model
+    
     def __init__(self):
         self.mark = 0
         self.chromosome = OrderedDict()
