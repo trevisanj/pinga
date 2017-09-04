@@ -6,7 +6,7 @@ Interactive Genetic Algorithm in Processing (Python mode)
 ## Contents
 
 ```
- handson: sketchbook for hands-on session (see below)
+ handson: sketchbook for hands-on tutorial (see below)
     bank: image bank (see below)
    faces: hands-on solution
 sketches: another "species" using the same interactive GA engine
@@ -14,10 +14,10 @@ sketches: another "species" using the same interactive GA engine
 
 ### Hands-on sketchbook
 
-The directory `handson` is incomplete. It already contains a visual 
+~~The directory `handson` is incomplete. It already contains a visual 
 frontend and some of the genetic-algorithm related routines.
 
-The following routines will be implemented during the hands-on session:
+The following routines will be implemented during the hands-on tutorial:
 
   - `random_individual()`, generates new individual from scratch
   - `draw_individual()`, aka produce the "phenotype"
@@ -29,7 +29,9 @@ If there is time left, we will also implement the following routines
 
   - `new_population_random()`, generates new population of random individuals
   - `new_population_mutants()`, generates new population of mutants from existing population
-  - `new_population_children()`, generates new population of children of selected individuals
+  - `new_population_children()`, generates new population of children of selected individuals~~
+  
+`handson` now contains working code and a new feature has been added to the faces.  
 
 ### Image bank
 

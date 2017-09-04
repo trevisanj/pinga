@@ -1,11 +1,18 @@
 """
 PInGA - Processing Interactive Genetic Algorithm
 
-"Species": 3-featured face **UPDATE**: 4-featured face
+"Species": 4-featured face
 
-This code is the final result of the hands-on session in 29/Aug/2017 @ GHC 
+**This code is incomplete**. Missing bodies:
+    
+- random_individual()
+- draw_individual()
+- mutate()
+- create_child()
+- new_population_random()
+- new_population_mutants()
+- new_population_children()
 """
-
 
 import math
 import random
@@ -61,8 +68,12 @@ def load_bank():
     for name, area in zip(F_NAMES, F_AREAS):
         list_temp = []
         F_BANK.append(list_temp)
-        for filename in glob.glob("{}/{}*".format("../bank", name)):
-            print(filename)
+        wild = "{}/{}*".format("../../bank", name)
+        filenames = glob.glob(wild)
+        if len(filenames) == 0:
+            raise RuntimeError("No files found for mask '{}'".format(wild))
+        for filename in filenames:
+            print("Converting file '{}'".format(filename))
             img = loadImage(filename)
             img.format = ARGB
 
@@ -115,39 +126,10 @@ def random_individual():
     Returns:
         new Individual object
     """
-    ret = Individual()
-    
-    # F_NAMES = ["eye", "nose", "mouth"]
-    #
-    # F_BANK = [[image00, image01, ...], [image10, imaqge11, ...], ...]
-    #
-    # list(enumerate(F_NAMES)) = [(0, "eye"), (1, "nose"), (2, "mouth")]
-    
-    for i, feature_name in enumerate(F_NAMES):
-        ret[feature_name] = random.randint(0, len(F_BANK[i])-1)
-        
-    # ret["eye"] = random.randint(0, len(F_BANK[0])-1)
-    # ret["nose"] = random.randint(0, len(F_BANK[1])-1)
-    # ret["mouth"] = random.randint(0, len(F_BANK[2])-1)
-    
-    return ret
-        
+            
     
 def draw_individual(individual):
     """This function produces the "phenotype", i.e., the visual representation of the individual"""
-
-    for i, feature_name in reversed(list(enumerate(individual))):
-        index = individual[feature_name]  # gene: index of feature
-        img = F_BANK[i][index]
-
-                
-        # x = -img.width/2
-        # y = F_Y[i]*DIST_MULT-img.height/2
-        # image(img, x, y)
-        
-        
-        image(img, 0, F_Y[i]*DIST_MULT)
-        
 
 
 def mutate(individual):
@@ -160,17 +142,6 @@ def mutate(individual):
         None
     """
 
-    #if random.random() < MUTATION_PROB:
-    #    individual["eye"] = random.randint(0, len(F_BANK[0])-1)   
-    #if random.random() < MUTATION_PROB:
-    #    individual["nose"] = random.randint(0, len(F_BANK[1])-1)    
-    #if random.random() < MUTATION_PROB:
-    #    individual["mouth"] = random.randint(0, len(F_BANK[2])-1)    
-        
-    for i, feature_name in enumerate(individual):
-        if random.random() < MUTATION_PROB:
-            individual[feature_name] = random.randint(0, len(F_BANK[i])-1)
-    
 
 def create_child(parents):
     """Creates single individual as a combination of genes taken randomly from parents.
@@ -180,10 +151,6 @@ def create_child(parents):
     Returns:
         new Individual object
     """
-    ret = Individual()
-    for feature_name in F_NAMES:
-        ret[feature_name] = random.choice(parents)[feature_name]
-    return ret
 
 
 ####################################################################################################
@@ -215,7 +182,7 @@ def create_child(parents):
 # ## Constants
 #
 # Number of individuals
-POPULATION_SIZE = 16
+POPULATION_SIZE = 55
 #
 # ### Keyboard control setup
 #
@@ -229,7 +196,7 @@ KEY_CHILDREN = "C"
 # ### Visual setup
 #
 # Canvas dimensions (pixels)
-WIDTH, HEIGHT = 700, 700
+WIDTH, HEIGHT = 1300, 700
 # Scale for rendering the individuals (arbitrary unit)
 # (tune this until drawing size is acceptable)
 SCALE_K = 2. / 300
@@ -261,18 +228,6 @@ def new_population_random(population=None):
     Returns:
         list: new population
     """
-    if population is None:
-        population = []
-        
-    ret = [x for x in population if x.mark == MARK_GREEN]
-    
-    # ret = []
-    # for x in population:
-    #     if x.mark == MARK_GREEN:
-    #         ret.append(x)
-    
-    ret.extend([random_individual() for _ in range(0, POPULATION_SIZE - len(ret))])
-    return ret
 
 
 def new_population_mutants(population):
@@ -285,11 +240,6 @@ def new_population_mutants(population):
     Returns:
         list: new population
     """
-    green = [x for x in population if x.mark == MARK_GREEN]
-    other = [x for x in population if x.mark == MARK_WHITE]
-    for individual in other:
-        mutate(individual)
-    return green+other
     
 
 def new_population_children(population):
@@ -302,9 +252,6 @@ def new_population_children(population):
     Returns:
         list: new population
     """
-    ret = [x for x in population if x.mark == MARK_GREEN]
-    ret.extend([create_child(ret) for i in range(POPULATION_SIZE - len(ret))])
-    return ret
 
 
 #############
